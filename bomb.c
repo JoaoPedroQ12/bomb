@@ -5,7 +5,8 @@
 #include <string.h>
 
 int filter_docx(const struct dirent *);
-void extract_text(const char *, FILE *);
+void extractor_txt(const char *, FILE *);
+void extractor_imag(zip_t *, FILE *);
 
 int main(int argc, char *argv[]) {
 	const char *progname = argv[0];
@@ -27,7 +28,6 @@ int main(int argc, char *argv[]) {
 	for(i; i < entry; i++){
 		if ((docx = zip_open(files[i]->d_name, 0, &err)) != NULL){
 			printf("%s{}{}Foi aberto com sucesso\n", files[i]->d_name);
-			
 			zip_file_t *xml_file = zip_fopen(docx, "word/document.xml", 0);
 			if (xml_file == NULL) {
 				printf("document.xml não encontrado");
@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
 				return 1;
 			}
 
-			extract_text(xml_content, txt_out);
+			extractor_txt(xml_content, txt_out);
+			extractor_imag(docx, txt_out);
 			fclose(txt_out);
 			free(xml_content);
 			zip_fclose(xml_file);
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
 					progname, files[i]->d_name, zip_error_strerror(&error));
 			zip_error_fini(&error);
 		}
-		free(files[i]);	
+			free(files[i]);	
 
 	}
 	free(files);
@@ -89,7 +90,7 @@ int filter_docx(const struct dirent *entry){
 	return (len > 5 && strcmp(name_f + len - 5, ".docx") == 0);
 }
 
-void extract_text(const char *document_xml, FILE *out_txt) {
+void extractor_txt(const char *document_xml, FILE *out_txt) {
 	const char *tag_start = "<w:t>";
 	const char *tag_end = "</w:t>";
 	const char *ptr = document_xml;
@@ -105,4 +106,28 @@ void extract_text(const char *document_xml, FILE *out_txt) {
 	}
 
 }
+
+void extractor_imag(zip_t *docx, FILE *out_txt) {
+	zip_t *pdocx = docx;
+	int i;
+	i = 0;
+	zip_int64_t num_entrie = zip_get_num_entries(pdocx, 0);
+	
+	if (num_entrie < 0) {
+		fprintf(stderr, "Erro ao tentar pegar o numero de entradas\n");
+		return;
+	}
+
+	for (i; i < num_entrie; i++) {
+		const char *name = zip_get_name(pdocx, i, 0);
+		if (name && strstr(name, "word/media/") != NULL) {
+			const char *filename = strrchr(name, '/');
+			if(filename) filename++; else filename = name;
+			fprintf(out_txt, "%s\n", filename);}
+	}
+}
+
+
+
+
 
