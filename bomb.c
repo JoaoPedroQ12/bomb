@@ -27,7 +27,6 @@ int main(int argc, char *argv[]) {
 	}
 	for(i; i < entry; i++){
 		if ((docx = zip_open(files[i]->d_name, 0, &err)) != NULL){
-			printf("%s{}{}Foi aberto com sucesso\n", files[i]->d_name);
 			zip_file_t *xml_file = zip_fopen(docx, "word/document.xml", 0);
 			if (xml_file == NULL) {
 				printf("document.xml não encontrado");
